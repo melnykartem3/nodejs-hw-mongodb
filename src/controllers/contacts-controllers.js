@@ -7,9 +7,23 @@ import {
 } from '../services/contacts.js';
 import { addContact } from '../services/contacts.js';
 import { upsertContact } from '../services/contacts.js';
+import parsePaginationParams from '../utils/parsePaginationParams.js';
+import parseSortParams from '../utils/parseSortParams.js';
+import { contactFieldList } from '../constants/contacts-constants.js';
+import parseContactsFilterParams from '../utils/parseContactsFilterParams.js';
 
 export const getAllContactsController = async (req, res) => {
-  const contacts = await getAllContacts();
+  const { query } = req;
+  const { page, perPage } = parsePaginationParams(query);
+  const { sortBy, sortOrder } = parseSortParams(query, contactFieldList);
+  const filter = parseContactsFilterParams(query);
+  const contacts = await getAllContacts({
+    page,
+    perPage,
+    sortBy,
+    sortOrder,
+    filter,
+  });
 
   res.json({
     status: '200',
