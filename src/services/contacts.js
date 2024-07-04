@@ -14,16 +14,12 @@ export const getAllContacts = async ({
   const databaseQuery = contactsCollection.find();
 
   if (filter.type) {
-    console.log(`Filtering by type: ${filter.type}`); // Debugging
     databaseQuery.where('contactType').equals(filter.type);
   }
 
-  if (filter.isFavourite !== null) {
-    console.log(`Filtering by isFavourite: ${filter.isFavourite}`); // Debugging
+  if (filter.isFavourite !== undefined) {
     databaseQuery.where('isFavourite').equals(filter.isFavourite);
   }
-
-  console.log(`Final Query: ${JSON.stringify(databaseQuery.getFilter())}`); // Log the final query
 
   const data = await databaseQuery
     .skip(skip)
