@@ -13,6 +13,10 @@ export const getAllContacts = async ({
 
   const databaseQuery = contactsCollection.find();
 
+  if (filter.userId) {
+    databaseQuery.where('userId').equals(filter.userId);
+  }
+
   if (filter.type) {
     databaseQuery.where('contactType').equals(filter.type);
   }
@@ -48,8 +52,7 @@ export const getAllContacts = async ({
   };
 };
 
-export const getContactById = (contactId) =>
-  contactsCollection.findById(contactId);
+export const getContact = (filter) => contactsCollection.findOne(filter);
 
 export const addContact = (data) => contactsCollection.create(data);
 

@@ -1,5 +1,10 @@
 import { model, Schema } from 'mongoose';
-import { contactTypeList } from '../../constants/contacts-constants.js';
+
+import {
+  contactNumberRegexp,
+  contactTypeList,
+} from '../../constants/contacts.js';
+import { emailRegexp } from '../../constants/users.js';
 import { mongooseSaveError, setUpdateSettings } from './hooks.js';
 
 const contactsSchema = new Schema(
@@ -10,10 +15,12 @@ const contactsSchema = new Schema(
     },
     phoneNumber: {
       type: String,
+      match: contactNumberRegexp,
       required: true,
     },
     email: {
       type: String,
+      match: emailRegexp,
       required: false,
     },
     isFavourite: {
@@ -24,6 +31,11 @@ const contactsSchema = new Schema(
       type: String,
       enum: contactTypeList,
       default: contactTypeList[2],
+    },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+      required: true,
     },
   },
   {
