@@ -3,20 +3,22 @@ import createHttpError from 'http-errors';
 import {
   deleteContact,
   getAllContacts,
-  getContactById,
+  getContact,
 } from '../services/contacts.js';
 import { addContact } from '../services/contacts.js';
 import { upsertContact } from '../services/contacts.js';
 import parsePaginationParams from '../utils/parsePaginationParams.js';
 import parseSortParams from '../utils/parseSortParams.js';
-import { contactFieldList } from '../constants/contacts-constants.js';
+import { contactFieldList } from '../constants/contacts.js';
 import parseContactsFilterParams from '../utils/parseContactsFilterParams.js';
 
 export const getAllContactsController = async (req, res) => {
+  const { _id: userId } = req.user;
   const { query } = req;
   const { page, perPage } = parsePaginationParams(query);
   const { sortBy, sortOrder } = parseSortParams(query, contactFieldList);
-  const filter = parseContactsFilterParams(query);
+  const filter = { ...parseContactsFilterParams(query), userId };
+
   const contacts = await getAllContacts({
     page,
     perPage,
@@ -32,9 +34,10 @@ export const getAllContactsController = async (req, res) => {
   });
 };
 
-export const getContactByIdController = async (req, res) => {
+export const getContactController = async (req, res) => {
   const { contactId } = req.params;
-  const contact = await getContactById(contactId);
+  const { _id: userId } = req.user;
+  const contact = await getContact({ _id: contactId, userId });
 
   if (!contact) {
     throw createHttpError(404, {
@@ -51,7 +54,9 @@ export const getContactByIdController = async (req, res) => {
 };
 
 export const addContactController = async (req, res) => {
-  const data = await addContact(req.body);
+  const { _id: userId } = req.user;
+
+  const data = await addContact({ ...req.body, userId });
 
   res.status(201).json({
     status: 201,
@@ -62,7 +67,11 @@ export const addContactController = async (req, res) => {
 
 export const patchContactController = async (req, res) => {
   const { contactId } = req.params;
-  const result = await upsertContact({ _id: contactId }, req.body);
+  const { _id: userId } = req.user;
+
+  const result = await upsertContact({ _id: contactId, userId }, req.body, {
+    upsert: true,
+  });
 
   if (!result) {
     throw createHttpError(404, {
@@ -81,7 +90,9 @@ export const patchContactController = async (req, res) => {
 export const deleteContactController = async (req, res) => {
   const { contactId } = req.params;
 
-  const result = await deleteContact({ _id: contactId });
+  const { _id: userId } = req.user;
+
+  const result = await deleteContact({ _id: contactId, userId });
 
   if (!result) {
     throw createHttpError(404, {
