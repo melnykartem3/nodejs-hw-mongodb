@@ -1,4 +1,5 @@
 import express from 'express';
+import pino from 'pino-http';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
@@ -12,9 +13,16 @@ import errorHandler from './middlewares/errorHandler.js';
 const port = env('PORT', '3000');
 
 const setupServer = () => {
+  const logger = pino({
+    transport: {
+      target: 'pino-pretty',
+    },
+  });
+
   const app = express();
 
   app.use(cors());
+  app.use(logger);
   app.use(cookieParser());
   app.use(express.json());
 
