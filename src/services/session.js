@@ -5,7 +5,7 @@ import Session from '../db/models/Session.js';
 import {
   ACCESS_TOKEN_LIFETIME,
   REFRESH_TOKEN_LIFETIME,
-} from '../constants/session.js';
+} from '../constants/index.js';
 
 export const findSession = (filter) => Session.findOne(filter);
 

@@ -10,6 +10,8 @@ import contactsRouter from './routers/contacts.js';
 import notFoundHandler from './middlewares/notFoundHandler.js';
 import errorHandler from './middlewares/errorHandler.js';
 
+import { PUBLIC_DIR } from './constants/index.js';
+
 const port = env('PORT', '3000');
 
 const setupServer = () => {
@@ -25,6 +27,7 @@ const setupServer = () => {
   app.use(logger);
   app.use(cookieParser());
   app.use(express.json());
+  app.use(express.static(PUBLIC_DIR));
 
   app.use('/auth', authRouter);
   app.use('/contacts', contactsRouter);

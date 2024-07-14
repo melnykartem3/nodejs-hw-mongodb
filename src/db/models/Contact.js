@@ -32,6 +32,9 @@ const contactsSchema = new Schema(
       enum: contactTypeList,
       default: contactTypeList[2],
     },
+    photo: {
+      type: String,
+    },
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'user',
