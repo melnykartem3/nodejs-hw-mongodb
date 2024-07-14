@@ -1,11 +1,27 @@
 import createHttpError from 'http-errors';
-import { compareValue } from '../utils/hash.js';
-import { findUser, signup } from '../services/auth.js';
+import jwt from 'jsonwebtoken';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import handlebars from 'handlebars';
+
+import env from '../utils/env.js';
+import { compareValue, hashValue } from '../utils/hash.js';
+import sendEmail from '../utils/sendEmail.js';
+
+import { TEMPLATES_DIR } from '../constants/index.js';
+
+import { findUser, resetPassword, signup } from '../services/auth.js';
+
 import {
   createSession,
   deleteSession,
   findSession,
 } from '../services/session.js';
+
+const app_domain = env('APP_DOMAIN');
+const jwt_secret = env('JWT_SECRET');
+
+const passwordPath = path.join(TEMPLATES_DIR, 'reset-password.html');
 
 const setupResponseSession = (
   res,
@@ -114,4 +130,71 @@ export const logoutController = async (req, res) => {
   res.clearCookie('refreshToken');
 
   res.status(204).send();
+};
+
+export const requestResetEmailController = async (req, res) => {
+  const { email } = req.body;
+  const user = await findUser({ email });
+
+  if (!user) {
+    throw createHttpError(404, 'User not found!');
+  }
+
+  const payload = {
+    id: user._id,
+    email,
+  };
+
+  const resetToken = jwt.sign(payload, jwt_secret, { expiresIn: '5m' });
+
+  const resetPasswordTemplateSource = await fs.readFile(passwordPath, 'utf-8');
+  const resetPasswordTemplate = handlebars.compile(resetPasswordTemplateSource);
+
+  const html = resetPasswordTemplate({
+    name: user.name,
+    link: `${app_domain}/reset-password?token=${resetToken}`,
+  });
+
+  const result = await sendEmail({
+    subject: 'Reset your password',
+    to: email,
+    html,
+  });
+
+  if (!result) {
+    createHttpError(500, 'Failed to send the email, please try again later.');
+  }
+
+  res.json({
+    status: 200,
+    message: 'Reset password email has been successfully sent.',
+    data: {},
+  });
+};
+
+export const resetPasswordController = async (req, res) => {
+  const { token, password: newPassword } = req.body;
+  try {
+    const { id, email } = jwt.verify(token, jwt_secret);
+
+    const user = await findUser({ _id: id, email });
+
+    if (!user) {
+      throw createHttpError(404, 'User not found');
+    }
+
+    const encryptedPassword = await hashValue(newPassword);
+
+    await resetPassword({ _id: user._id }, { password: encryptedPassword });
+
+    await deleteSession({ userId: user._id });
+    console.log(await findSession());
+    res.json({
+      status: 200,
+      message: 'Reset password successful.',
+      data: {},
+    });
+  } catch (error) {
+    throw createHttpError(401, error.message);
+  }
 };
