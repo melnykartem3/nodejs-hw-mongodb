@@ -89,9 +89,29 @@ export const patchContactController = async (req, res) => {
   const { contactId } = req.params;
   const { _id: userId } = req.user;
 
-  const result = await upsertContact({ _id: contactId, userId }, req.body, {
-    upsert: true,
-  });
+  let updatesFields = { ...req.body };
+
+  if (req.file) {
+    try {
+      let photo;
+      if (enable_cloudinary === 'true') {
+        photo = await saveFileToCloudinary(req.file, 'photos');
+      } else {
+        photo = await saveFileToPublicDir(req.file, 'photos');
+      }
+      updatesFields.photo = photo;
+    } catch (error) {
+      throw createHttpError(500, error.message);
+    }
+  }
+
+  const result = await upsertContact(
+    { _id: contactId, userId },
+    updatesFields,
+    {
+      upsert: true,
+    },
+  );
 
   if (!result) {
     throw createHttpError(404, {
