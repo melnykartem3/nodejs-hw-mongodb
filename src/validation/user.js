@@ -34,3 +34,11 @@ export const userSigninSchema = Joi.object({
     'any.required': `"password" is a required field`,
   }),
 });
+
+export const userGoogleOAuthSchema = Joi.object({
+  code: Joi.string().required().messages({
+    'string.base': `"code" should be a type of 'text'`,
+    'string.empty': `"code" cannot be an empty field`,
+    'any.required': `"code" is a required field`,
+  }),
+});
